@@ -38,10 +38,8 @@ dependencies:
   # State management
   provider: ^6.1.2
 
-  # Persistence (level progress, posted-story timestamp, cached story)
-  shared_preferences: ^2.3.2
-
-  # Secure, device-bound identity (BBM-style PIN; iOS Keychain / Android Keystore)
+  # Secure, device-bound, hardware-backed storage for ALL persisted state
+  # (identity PIN, level/posts, live story). No plaintext on disk.
   flutter_secure_storage: ^9.2.2
 
   # Device sensors — shake-to-discover

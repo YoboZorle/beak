@@ -17,7 +17,7 @@ class OnboardingScreen extends StatelessWidget {
     ('📡', 'Shake to discover',
         'Shake your phone to scan the beacon. See anonymous people 0–30 km around you, ranked by distance.'),
     ('🕒', 'Post to unlock',
-        'Drop one 24h story — a text card, a photo, or a 15s voice note. It puts you on the map and reveals everyone around you.'),
+        'Drop one 5-min story (demo) — a text card, a photo, or a 15s voice note. It puts you on the map and reveals everyone around you.'),
     ('🏆', 'Level up',
         'Every story you post fills your rank — Rookie to Mythic. Be active, climb the ladder.'),
   ];

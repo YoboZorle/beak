@@ -148,7 +148,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
     messenger.showSnackBar(const SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: AppColors.accent,
-      content: Text('Story posted — your beacon is live for 24h 📡'),
+      content: Text('Story posted — your beacon is live for 5 min 📡'),
     ));
   }
 
@@ -220,7 +220,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : const Text('Post to beacon (24h)',
+                      : const Text('Post to beacon (5 min)',
                           style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
@@ -450,7 +450,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 const Text(
-                    'You can post one story every 24 hours. It disappears when the timer ends.',
+                    'You can post one story every 5 minutes (demo). It disappears when the timer ends.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textSecondary)),
                 const SizedBox(height: 20),

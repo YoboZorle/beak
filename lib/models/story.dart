@@ -68,7 +68,9 @@ class Story {
     this.audioDurationMs = 0,
   });
 
-  static const Duration lifetime = Duration(hours: 24);
+  // DEMO: stories live for 5 minutes (production value is 24h). Change this
+  // one constant to flip back: Duration(hours: 24).
+  static const Duration lifetime = Duration(minutes: 5);
 
   DateTime get expiresAt => createdAt.add(lifetime);
   bool get isExpired => DateTime.now().isAfter(expiresAt);

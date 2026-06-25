@@ -15,9 +15,16 @@ import 'username_generator.dart';
 
 /// In-memory backend for the frontend phase — the single source of truth.
 ///
-/// Everything is driven through streams so all screens stay consistent:
-/// discovery (beacons + stories), chat requests, chats, and push events all
-/// flow from the same mutable state and are re-emitted on every change.
+/// Discovery is **location-real**: each nearby person is anchored at an actual
+/// coordinate near the device, and distances are true haversine metres that
+/// change as the user moves (the app feeds live GPS in via [nearbyBeacons]).
+/// If the user jumps far (e.g. the first real GPS fix replaces the fallback),
+/// people are re-anchored around the new position so the radar stays useful.
+///
+/// Because Beau's rule is "no post, no presence", **every** visible person has
+/// a live post — so the radar always shows posts and updates in realtime as
+/// new posts arrive and old ones expire. (Real *other* users arrive in Phase 2
+/// via Firebase; here peers are simulated but behave consistently.)
 class MockBackendService implements BackendService {
   MockBackendService(this._storage);
 
@@ -34,6 +41,13 @@ class MockBackendService implements BackendService {
   final List<ChatRequest> _requests = [];
   final List<Chat> _chats = [];
   Story? _myStory;
+
+  // Per-person geo: relative (distance, bearing) from the anchor, and the
+  // resolved absolute coordinate. Distances are recomputed from these.
+  final Map<String, List<double>> _rel = {}; // id -> [dist(m), bearing(rad)]
+  final Map<String, List<double>> _coords = {}; // id -> [lat, lng]
+  double? _anchorLat;
+  double? _anchorLng;
 
   final _beaconCtrl = StreamController<List<BeaconUser>>.broadcast();
   final _storyCtrl = StreamController<List<Story>>.broadcast();
@@ -53,7 +67,6 @@ class MockBackendService implements BackendService {
     _myLat = lat;
     _myLng = lng;
 
-    // Device-bound, deterministic identity (BBM-style): derived from the PIN.
     final seed = _storage.identitySeed;
     _me = BeaconUser(
       id: _storage.pin,
@@ -84,31 +97,70 @@ class MockBackendService implements BackendService {
   @override
   Future<bool> hasActivePost() async => _live;
 
+  // ------------------------------------------------------------ geo helpers
+  void _place(String id, double dist, double bearing) {
+    _rel[id] = [dist, bearing];
+    _coords[id] =
+        LocationService.destination(_myLat, _myLng, dist, bearing);
+  }
+
+  void _reanchorIfNeeded() {
+    final moved = (_anchorLat == null)
+        ? double.infinity
+        : LocationService.distanceMeters(
+            _anchorLat!, _anchorLng!, _myLat, _myLng);
+    if (moved > 2000) {
+      // Re-place everyone around the new position, preserving their relative
+      // distance + bearing, so a big GPS jump doesn't fling them away.
+      for (final entry in _rel.entries) {
+        _coords[entry.key] = LocationService.destination(
+            _myLat, _myLng, entry.value[0], entry.value[1]);
+      }
+      _anchorLat = _myLat;
+      _anchorLng = _myLng;
+    }
+  }
+
+  void _recomputeDistances() {
+    for (var i = 0; i < _world.length; i++) {
+      final u = _world[i];
+      final c = _coords[u.id];
+      if (c == null) continue;
+      final d = LocationService.distanceMeters(_myLat, _myLng, c[0], c[1]);
+      _world[i] = u.copyWith(distanceMeters: d);
+      final si = _stories.indexWhere((s) => s.authorId == u.id);
+      if (si != -1) _stories[si] = _stories[si].copyWith(distanceMeters: d);
+    }
+  }
+
   // ------------------------------------------------------------ discovery
   void _seedWorld() {
     if (_world.isNotEmpty) return;
+    _anchorLat = _myLat;
+    _anchorLng = _myLng;
     final count = 9 + _rng.nextInt(4); // 9-12 people
     for (var i = 0; i < count; i++) {
-      _world.add(_spawn(maxMeters: _maxMeters));
-    }
-    // Give roughly half of them a live story.
-    final withStories =
-        _world.where((_) => _rng.nextBool()).toList(growable: false);
-    for (final u in withStories) {
-      _stories.add(_storyFor(u));
+      // Bias toward being visible at common ranges: most within ~10km.
+      final u = _spawn(maxMeters: 10000);
+      _world.add(u);
+      _stories.add(_storyFor(u)); // everyone visible has a post
     }
   }
 
   BeaconUser _spawn({required double maxMeters}) {
+    final id = _uuid.v4();
+    final bearing = _rng.nextDouble() * 2 * pi;
     final dist = 80 + _rng.nextDouble() * maxMeters;
+    _place(id, dist, bearing);
+    final c = _coords[id]!;
     return BeaconUser(
-      id: _uuid.v4(),
+      id: id,
       username: UsernameGenerator.generate(),
       avatarSeed: UsernameGenerator.avatarSeed(),
       level: Level.fromPostCount(_rng.nextInt(60)),
-      distanceMeters: dist,
-      hasStory: false,
-      bearing: _rng.nextDouble() * 2 * pi,
+      distanceMeters: LocationService.distanceMeters(_myLat, _myLng, c[0], c[1]),
+      hasStory: true,
+      bearing: bearing,
     );
   }
 
@@ -125,9 +177,6 @@ class MockBackendService implements BackendService {
   ];
 
   Story _storyFor(BeaconUser u) {
-    // Mark the author as having a live story so the radar ring shows.
-    final idx = _world.indexWhere((w) => w.id == u.id);
-    if (idx != -1) _world[idx] = _world[idx].copyWith(hasStory: true);
     return Story(
       id: _uuid.v4(),
       authorId: u.id,
@@ -137,8 +186,9 @@ class MockBackendService implements BackendService {
       type: StoryType.textCard, // peers use text cards in Phase 1
       gradientIndex: _rng.nextInt(8),
       caption: _captions[_rng.nextInt(_captions.length)],
-      createdAt:
-          DateTime.now().subtract(Duration(minutes: _rng.nextInt(22 * 60))),
+      // Within the (demo) lifetime window so it's live right now.
+      createdAt: DateTime.now()
+          .subtract(Duration(seconds: _rng.nextInt(Story.lifetime.inSeconds))),
       distanceMeters: u.distanceMeters,
     );
   }
@@ -175,17 +225,8 @@ class MockBackendService implements BackendService {
   }) async {
     _myLat = lat;
     _myLng = lng;
-    // Simulate movement / new arrivals on each manual scan (shake).
-    for (var i = 0; i < _world.length; i++) {
-      final u = _world[i];
-      final jitter = (_rng.nextDouble() - 0.5) * 800;
-      final d = (u.distanceMeters + jitter).clamp(60.0, _maxMeters);
-      _world[i] = u.copyWith(distanceMeters: d);
-      // keep that user's story distance in sync
-      final si = _stories.indexWhere((s) => s.authorId == u.id);
-      if (si != -1) _stories[si] = _stories[si].copyWith(distanceMeters: d);
-    }
-    if (_live && _rng.nextDouble() < 0.4) _world.add(_spawn(maxMeters: _maxMeters));
+    _reanchorIfNeeded();
+    _recomputeDistances();
     _emitDiscovery();
     return _gatedBeacons();
   }
@@ -231,6 +272,8 @@ class MockBackendService implements BackendService {
     required double lat,
     required double lng,
   }) async {
+    _myLat = lat;
+    _myLng = lng;
     final story = Story(
       id: _uuid.v4(),
       authorId: _me.id,
@@ -248,12 +291,11 @@ class MockBackendService implements BackendService {
     );
     await _storage.recordPost(story.toJson());
     _myStory = story;
-
     _me = _me.copyWith(hasStory: true);
 
-    // Posting unlocks discovery — make sure there's a world to reveal, then
-    // emit everything. (Consistency: one place updates, streams fan out.)
-    _seedWorld();
+    _seedWorld(); // ensure a world to reveal
+    _reanchorIfNeeded();
+    _recomputeDistances();
     _emitDiscovery();
     return story;
   }
@@ -290,8 +332,6 @@ class MockBackendService implements BackendService {
     _requests.add(req);
     _requestCtrl.add(List.unmodifiable(_requests));
 
-    // Simulate the peer accepting; seed the chat with my opening line, then
-    // a reply lands shortly after.
     Timer(Duration(seconds: 2 + _rng.nextInt(3)), () {
       final i = _requests.indexWhere((r) => r.id == req.id);
       if (i != -1) {
@@ -321,7 +361,6 @@ class MockBackendService implements BackendService {
       _requests[i] = _requests[i].copyWith(status: ChatRequestStatus.accepted);
       _requestCtrl.add(List.unmodifiable(_requests));
     }
-    // Accepting by responding: their preview becomes the opening message.
     return _ensureChat(
       peerId: request.fromUserId,
       peerUsername: request.fromUsername,
@@ -447,39 +486,42 @@ class MockBackendService implements BackendService {
     _ambient?.cancel();
     _expiry?.cancel();
 
-    // Live activity: new arrivals, new stories, incoming Beaks.
-    _ambient = Timer.periodic(const Duration(seconds: 12), (_) {
-      if (!_live) return; // gated — nothing to surface until you post
-      final roll = _rng.nextDouble();
-      if (roll < 0.4) {
-        final u = _spawn(maxMeters: 14000);
+    // Live activity every 7s. Gated until you post. Because presence requires
+    // a post, a "new person" always comes WITH a post that lands close enough
+    // to show on the scanner immediately.
+    _ambient = Timer.periodic(const Duration(seconds: 7), (_) {
+      if (!_live) return;
+      if (_rng.nextDouble() < 0.7) {
+        // New nearby post — placed within ~5km so it appears on the radar.
+        final u = _spawn(maxMeters: 5000);
         _world.add(u);
-        _emitDiscovery();
-        _eventCtrl.add(NearbyEvent(
-          type: NearbyEventType.beaconNearby,
-          title: 'New beacon near you',
-          body: '${u.username} is ${u.distanceLabel}',
-          username: u.username,
-          avatarSeed: u.avatarSeed,
+        final s = _storyFor(u).copyWith(distanceMeters: u.distanceMeters);
+        // Fresh post (created now) so it sorts to the top and is clearly live.
+        _stories.add(Story(
+          id: s.id,
+          authorId: u.id,
+          authorUsername: u.username,
+          authorAvatarSeed: u.avatarSeed,
+          authorLevel: u.level,
+          type: s.type,
+          gradientIndex: s.gradientIndex,
+          caption: s.caption,
+          createdAt: DateTime.now(),
+          distanceMeters: u.distanceMeters,
         ));
-      } else if (roll < 0.72) {
-        final u = _world.isEmpty
-            ? _spawn(maxMeters: 14000)
-            : _world[_rng.nextInt(_world.length)];
-        if (!_world.any((w) => w.id == u.id)) _world.add(u);
-        final s = _storyFor(u);
-        _stories.add(s);
         _emitDiscovery();
         _eventCtrl.add(NearbyEvent(
           type: NearbyEventType.storyPosted,
           title: '${u.username} posted nearby',
-          body: s.caption,
+          body: '${s.caption}  ·  ${u.distanceLabel}',
           username: u.username,
           avatarSeed: u.avatarSeed,
         ));
       } else {
         // Incoming Beak — often a reaction/message about MY live story.
-        final u = _spawn(maxMeters: 9000);
+        final u = _spawn(maxMeters: 6000);
+        _world.add(u);
+        _stories.add(_storyFor(u).copyWith(distanceMeters: u.distanceMeters));
         final react = _rng.nextBool()
             ? kReactions[_rng.nextInt(kReactions.length)]
             : null;
@@ -502,6 +544,7 @@ class MockBackendService implements BackendService {
         );
         _requests.add(req);
         _requestCtrl.add(List.unmodifiable(_requests));
+        _emitDiscovery();
         _eventCtrl.add(NearbyEvent(
           type: NearbyEventType.chatRequest,
           title: 'Beak from ${u.username}',
@@ -512,13 +555,21 @@ class MockBackendService implements BackendService {
       }
     });
 
-    // Expiry sweep: drop expired stories; re-gate when my post lapses.
-    _expiry = Timer.periodic(const Duration(seconds: 20), (_) {
-      final before = _stories.length;
-      _stories.removeWhere((s) => s.isExpired);
+    // Expiry sweep every 8s: drop expired posts, re-gate when mine lapses,
+    // and prune their geo so memory stays tidy.
+    _expiry = Timer.periodic(const Duration(seconds: 8), (_) {
+      final expired = _stories.where((s) => s.isExpired).toList();
+      if (expired.isNotEmpty) {
+        for (final s in expired) {
+          _stories.removeWhere((x) => x.id == s.id);
+          _world.removeWhere((w) => w.id == s.authorId);
+          _rel.remove(s.authorId);
+          _coords.remove(s.authorId);
+        }
+      }
       final myExpired = !_live && _myStory != null;
       if (myExpired) _myStory = null;
-      if (before != _stories.length || myExpired) _emitDiscovery();
+      if (expired.isNotEmpty || myExpired) _emitDiscovery();
     });
   }
 

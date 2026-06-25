@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/beacon_user.dart';
+import '../../models/level.dart';
 import '../../providers/beacon_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/session_provider.dart';
@@ -120,14 +121,40 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _pinCard(pin),
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.stroke),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _showLevels(context, session.level),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.stroke),
+                      ),
+                      child: Column(
+                        children: [
+                          LevelProgress(level: session.level),
+                          const SizedBox(height: 12),
+                          const Divider(color: AppColors.stroke, height: 1),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.military_tech,
+                                  size: 16, color: AppColors.accentSoft),
+                              SizedBox(width: 6),
+                              Text('See all levels',
+                                  style: TextStyle(
+                                      color: AppColors.accentSoft,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700)),
+                              Icon(Icons.chevron_right,
+                                  size: 18, color: AppColors.accentSoft),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    child: LevelProgress(level: session.level),
                   ),
                   const SizedBox(height: 14),
                   _storyCard(context, beacon),
@@ -218,7 +245,7 @@ class ProfileScreen extends StatelessWidget {
                           fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   if (!live)
-                    const Text('You can post one story per 24h.',
+                    const Text('You can post one story every 5 min (demo).',
                         style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 12))
                   else if (beacon.myStoryRemaining != null)
@@ -262,4 +289,142 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       );
+
+  // ---- levels modal -----------------------------------------------------
+  void _showLevels(BuildContext context, Level current) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: AppColors.stroke,
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Levels',
+                  style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text(
+                  'You\u2019re a ${current.name}. Post stories to climb the ranks.',
+                  style: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: 16),
+              for (var i = 0; i < Level.stageNames.length; i++)
+                _levelTile(i, current),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _levelTile(int i, Level current) {
+    final cleared = i < current.stage;
+    final isCurrent = i == current.stage;
+    final Color color = cleared
+        ? const Color(0xFF49D17A)
+        : isCurrent
+            ? AppColors.accent
+            : AppColors.textMuted;
+    final IconData icon = cleared
+        ? Icons.check_circle
+        : isCurrent
+            ? Icons.star
+            : Icons.lock;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isCurrent ? AppColors.surfaceHigh : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: isCurrent ? AppColors.accent : AppColors.stroke),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration:
+                BoxDecoration(color: color.withValues(alpha: 0.16), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(Level.stageNames[i],
+                        style: TextStyle(
+                            color: i > current.stage
+                                ? AppColors.textMuted
+                                : AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700)),
+                    if (isCurrent) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(8)),
+                        child: const Text('You\u2019re here',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text('${Level.postsPerStage[i]} posts to clear this rank',
+                    style: const TextStyle(
+                        color: AppColors.textMuted, fontSize: 12)),
+                if (isCurrent) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: current.progress,
+                      minHeight: 6,
+                      backgroundColor: AppColors.stroke,
+                      valueColor:
+                          const AlwaysStoppedAnimation(AppColors.accent),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('${current.progressPercent}% to next rank',
+                      style: const TextStyle(
+                          color: AppColors.accentSoft, fontSize: 11)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
