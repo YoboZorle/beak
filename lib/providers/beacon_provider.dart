@@ -46,6 +46,7 @@ class BeaconProvider extends ChangeNotifier {
   bool _canPost = true;
   Duration? _myStoryRemaining;
   Story? _myStory;
+  List<BeaconUser> _leaderboard = [];
 
   List<BeaconUser> get beacons => _beacons;
   List<Story> get stories => _stories;
@@ -54,6 +55,7 @@ class BeaconProvider extends ChangeNotifier {
   bool get canPost => _canPost;
   Duration? get myStoryRemaining => _myStoryRemaining;
   Story? get myStory => _myStory;
+  List<BeaconUser> get leaderboard => _leaderboard;
   int get nearbyCount => _beacons.length;
   bool get locating => _location.permissionGranted && !_location.hasFix;
   bool get hasFix => _location.hasFix;
@@ -63,6 +65,7 @@ class BeaconProvider extends ChangeNotifier {
     _canPost = await _backend.canPostStory();
     _myStoryRemaining = await _backend.myStoryRemaining();
     _myStory = await _backend.myStory();
+    _leaderboard = await _backend.nearbyLeaderboard(radiusKm: 30);
   }
 
   /// Initial load, shake rescans, and silent location-driven refreshes.

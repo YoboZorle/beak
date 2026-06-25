@@ -50,6 +50,12 @@ class Story {
   /// Author distance from the current device (metres), for the feed/radar.
   final double distanceMeters;
 
+  /// The pinned location of this post (where it was created). The beacon lives
+  /// at this pin for its whole lifetime — viewers near the pin see it even if
+  /// the author has moved away or gone offline.
+  final double lat;
+  final double lng;
+
   const Story({
     required this.id,
     required this.authorId,
@@ -61,6 +67,8 @@ class Story {
     required this.caption,
     required this.createdAt,
     required this.distanceMeters,
+    this.lat = 0,
+    this.lng = 0,
     this.imagePath,
     this.imageUrl,
     this.audioPath,
@@ -106,7 +114,7 @@ class Story {
         bearing: 0,
       );
 
-  Story copyWith({double? distanceMeters}) => Story(
+  Story copyWith({double? distanceMeters, double? lat, double? lng}) => Story(
         id: id,
         authorId: authorId,
         authorUsername: authorUsername,
@@ -117,6 +125,8 @@ class Story {
         caption: caption,
         createdAt: createdAt,
         distanceMeters: distanceMeters ?? this.distanceMeters,
+        lat: lat ?? this.lat,
+        lng: lng ?? this.lng,
         imagePath: imagePath,
         imageUrl: imageUrl,
         audioPath: audioPath,
@@ -140,6 +150,8 @@ class Story {
         'caption': caption,
         'createdAt': createdAt.toIso8601String(),
         'distanceMeters': distanceMeters,
+        'lat': lat,
+        'lng': lng,
       };
 
   factory Story.fromJson(Map<String, dynamic> j) => Story(
@@ -159,5 +171,7 @@ class Story {
         caption: j['caption'] as String? ?? '',
         createdAt: DateTime.parse(j['createdAt'] as String),
         distanceMeters: (j['distanceMeters'] as num?)?.toDouble() ?? 0,
+        lat: (j['lat'] as num?)?.toDouble() ?? 0,
+        lng: (j['lng'] as num?)?.toDouble() ?? 0,
       );
 }

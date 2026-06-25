@@ -99,7 +99,7 @@ class _BeaconScreenState extends State<BeaconScreen> {
               // Radar
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 360,
+                  height: 440,
                   child: me == null
                       ? const Center(
                           child: CircularProgressIndicator(

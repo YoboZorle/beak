@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/anime_avatar.dart';
 import '../beacon/beacon_screen.dart';
 import '../chat/chat_list_screen.dart';
+import '../leaderboard/leaderboard_screen.dart';
 import '../profile/profile_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -23,6 +24,7 @@ class _HomeShellState extends State<HomeShell> {
   final _pages = const [
     BeaconScreen(),
     ChatListScreen(),
+    LeaderboardScreen(),
     ProfileScreen(),
   ];
 
@@ -37,7 +39,7 @@ class _HomeShellState extends State<HomeShell> {
       }
     });
 
-    final pending = context.watch<ChatProvider>().pendingCount;
+    final inbox = context.watch<ChatProvider>().inboxBadge;
 
     return Scaffold(
       body: IndexedStack(index: _index, children: _pages),
@@ -65,14 +67,20 @@ class _HomeShellState extends State<HomeShell> {
                   label: 'Beacon'),
               NavigationDestination(
                   icon: Badge(
-                    isLabelVisible: pending > 0,
-                    label: Text('$pending'),
+                    isLabelVisible: inbox > 0,
+                    label: Text('$inbox'),
                     child: const Icon(Icons.chat_bubble_outline,
                         color: AppColors.textSecondary),
                   ),
                   selectedIcon:
                       const Icon(Icons.chat_bubble, color: AppColors.accent),
                   label: 'Chats'),
+              const NavigationDestination(
+                  icon: Icon(Icons.emoji_events_outlined,
+                      color: AppColors.textSecondary),
+                  selectedIcon:
+                      Icon(Icons.emoji_events, color: AppColors.accent),
+                  label: 'Ranks'),
               const NavigationDestination(
                   icon: Icon(Icons.person_outline, color: AppColors.textSecondary),
                   selectedIcon: Icon(Icons.person, color: AppColors.accent),

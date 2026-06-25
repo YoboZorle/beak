@@ -43,6 +43,11 @@ abstract class BackendService {
   /// Live, continuously-updating nearby stories (new posts, expiries).
   Stream<List<Story>> storyStream();
 
+  /// People near you ranked by level (highest first), including you. Ungated —
+  /// you can always see the local leaderboard. Each entry's distance is from
+  /// you; your own entry has distance 0.
+  Future<List<BeaconUser>> nearbyLeaderboard({double radiusKm = 30});
+
   // ---- Posting ---------------------------------------------------------
   /// True if the device may post (one post per 24h rule).
   Future<bool> canPostStory();

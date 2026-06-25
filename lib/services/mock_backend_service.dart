@@ -129,7 +129,10 @@ class MockBackendService implements BackendService {
       final d = LocationService.distanceMeters(_myLat, _myLng, c[0], c[1]);
       _world[i] = u.copyWith(distanceMeters: d);
       final si = _stories.indexWhere((s) => s.authorId == u.id);
-      if (si != -1) _stories[si] = _stories[si].copyWith(distanceMeters: d);
+      if (si != -1) {
+        _stories[si] =
+            _stories[si].copyWith(distanceMeters: d, lat: c[0], lng: c[1]);
+      }
     }
   }
 
@@ -164,6 +167,26 @@ class MockBackendService implements BackendService {
     );
   }
 
+  static const _imageAssets = [
+    'assets/samples/img1.png',
+    'assets/samples/img2.png',
+    'assets/samples/img3.png',
+    'assets/samples/img4.png',
+    'assets/samples/img5.png',
+    'assets/samples/img6.png',
+  ];
+  static const _voiceAssets = [
+    'assets/samples/voice1.wav',
+    'assets/samples/voice2.wav',
+    'assets/samples/voice3.wav',
+  ];
+  static const _voiceDurations = [4000, 6000, 3500];
+  static const _voiceCaptions = [
+    'my current mood 🎧',
+    'say something back?',
+    'guess this opening 🎶',
+  ];
+
   static const _captions = [
     'anyone around for late night anime talk?',
     'rewatching FMA Brotherhood, fight me',
@@ -176,20 +199,50 @@ class MockBackendService implements BackendService {
     'sketching at the park, anyone close?',
   ];
 
-  Story _storyFor(BeaconUser u) {
+  /// A peer post. Peers use real bundled media — text cards, images, AND voice
+  /// notes — so other people's posts look like yours. [fresh] posts are created
+  /// "now" (just posted); otherwise they get a random age within the lifetime.
+  Story _storyFor(BeaconUser u, {bool fresh = false}) {
+    final pin = _coords[u.id] ?? [_myLat, _myLng];
+    final roll = _rng.nextDouble();
+    StoryType type;
+    String? imagePath;
+    String? audioPath;
+    int audioMs = 0;
+    String caption;
+    if (roll < 0.45) {
+      type = StoryType.textCard;
+      caption = _captions[_rng.nextInt(_captions.length)];
+    } else if (roll < 0.78) {
+      type = StoryType.imageText;
+      imagePath = _imageAssets[_rng.nextInt(_imageAssets.length)];
+      caption = _captions[_rng.nextInt(_captions.length)];
+    } else {
+      type = StoryType.voiceNote;
+      final vi = _rng.nextInt(_voiceAssets.length);
+      audioPath = _voiceAssets[vi];
+      audioMs = _voiceDurations[vi];
+      caption = _voiceCaptions[_rng.nextInt(_voiceCaptions.length)];
+    }
     return Story(
       id: _uuid.v4(),
       authorId: u.id,
       authorUsername: u.username,
       authorAvatarSeed: u.avatarSeed,
       authorLevel: u.level,
-      type: StoryType.textCard, // peers use text cards in Phase 1
+      type: type,
       gradientIndex: _rng.nextInt(8),
-      caption: _captions[_rng.nextInt(_captions.length)],
-      // Within the (demo) lifetime window so it's live right now.
-      createdAt: DateTime.now()
-          .subtract(Duration(seconds: _rng.nextInt(Story.lifetime.inSeconds))),
+      caption: caption,
+      createdAt: fresh
+          ? DateTime.now()
+          : DateTime.now()
+              .subtract(Duration(seconds: _rng.nextInt(Story.lifetime.inSeconds))),
       distanceMeters: u.distanceMeters,
+      lat: pin[0],
+      lng: pin[1],
+      imagePath: imagePath,
+      audioPath: audioPath,
+      audioDurationMs: audioMs,
     );
   }
 
@@ -216,6 +269,29 @@ class MockBackendService implements BackendService {
 
   @override
   Stream<List<Story>> storyStream() => _storyCtrl.stream;
+
+  @override
+  Future<List<BeaconUser>> nearbyLeaderboard({double radiusKm = 30}) async {
+    final maxM = radiusKm * 1000;
+    final people =
+        _world.where((u) => u.distanceMeters <= maxM).toList();
+    final me = BeaconUser(
+      id: _me.id,
+      username: _me.username,
+      avatarSeed: _me.avatarSeed,
+      level: Level.fromPostCount(_storage.postCount),
+      distanceMeters: 0,
+      hasStory: _live,
+      bearing: 0,
+    );
+    final all = [me, ...people];
+    all.sort((a, b) {
+      final byStage = b.level.stage.compareTo(a.level.stage);
+      if (byStage != 0) return byStage;
+      return b.level.progress.compareTo(a.level.progress);
+    });
+    return all;
+  }
 
   @override
   Future<List<BeaconUser>> nearbyBeacons({
@@ -285,6 +361,8 @@ class MockBackendService implements BackendService {
       caption: caption,
       createdAt: DateTime.now(),
       distanceMeters: 0,
+      lat: lat,
+      lng: lng,
       imagePath: imagePath,
       audioPath: audioPath,
       audioDurationMs: audioDurationMs,
@@ -495,20 +573,8 @@ class MockBackendService implements BackendService {
         // New nearby post — placed within ~5km so it appears on the radar.
         final u = _spawn(maxMeters: 5000);
         _world.add(u);
-        final s = _storyFor(u).copyWith(distanceMeters: u.distanceMeters);
-        // Fresh post (created now) so it sorts to the top and is clearly live.
-        _stories.add(Story(
-          id: s.id,
-          authorId: u.id,
-          authorUsername: u.username,
-          authorAvatarSeed: u.avatarSeed,
-          authorLevel: u.level,
-          type: s.type,
-          gradientIndex: s.gradientIndex,
-          caption: s.caption,
-          createdAt: DateTime.now(),
-          distanceMeters: u.distanceMeters,
-        ));
+        final s = _storyFor(u, fresh: true);
+        _stories.add(s);
         _emitDiscovery();
         _eventCtrl.add(NearbyEvent(
           type: NearbyEventType.storyPosted,
@@ -521,7 +587,7 @@ class MockBackendService implements BackendService {
         // Incoming Beak — often a reaction/message about MY live story.
         final u = _spawn(maxMeters: 6000);
         _world.add(u);
-        _stories.add(_storyFor(u).copyWith(distanceMeters: u.distanceMeters));
+        _stories.add(_storyFor(u, fresh: true));
         final react = _rng.nextBool()
             ? kReactions[_rng.nextInt(kReactions.length)]
             : null;

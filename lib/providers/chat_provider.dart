@@ -7,7 +7,7 @@ import '../models/reaction.dart';
 import '../services/backend_service.dart';
 
 class ChatProvider extends ChangeNotifier {
-  ChatProvider(this._backend) {
+  ChatProvider(this._backend, this.myId) {
     _reqSub = _backend.requestStream().listen((r) {
       _requests = r;
       notifyListeners();
@@ -19,11 +19,19 @@ class ChatProvider extends ChangeNotifier {
   }
 
   final BackendService _backend;
+
+  /// This device's identity id (== Beau PIN). Used to tell my messages from
+  /// the peer's, and to compute unread counts.
+  final String myId;
+
   late final StreamSubscription _reqSub;
   late final StreamSubscription _chatSub;
 
   List<ChatRequest> _requests = [];
   List<Chat> _chats = [];
+
+  /// Last time each chat was opened/read (chatId -> timestamp).
+  final Map<String, DateTime> _lastRead = {};
 
   List<ChatRequest> get requests => _requests;
   List<ChatRequest> get incomingPending => _requests
@@ -31,6 +39,24 @@ class ChatProvider extends ChangeNotifier {
       .toList();
   List<Chat> get chats => _chats;
   int get pendingCount => incomingPending.length;
+
+  /// Unread peer messages in a chat (messages from the peer after last read).
+  int unread(Chat c) {
+    final since = _lastRead[c.id] ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return c.messages
+        .where((m) => m.senderId != myId && m.sentAt.isAfter(since))
+        .length;
+  }
+
+  int get unreadTotal => _chats.fold(0, (sum, c) => sum + unread(c));
+
+  /// Badge shown on the Chats tab: unread messages + pending Beak requests.
+  int get inboxBadge => unreadTotal + pendingCount;
+
+  void markRead(String chatId) {
+    _lastRead[chatId] = DateTime.now();
+    notifyListeners();
+  }
 
   Chat? chatById(String id) {
     for (final c in _chats) {

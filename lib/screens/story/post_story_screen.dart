@@ -118,11 +118,23 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
   bool get _canPost {
     switch (_type) {
       case StoryType.textCard:
-        return true;
+        return _caption.text.trim().isNotEmpty;
       case StoryType.imageText:
         return _imagePath != null;
       case StoryType.voiceNote:
         return _audioPath != null;
+    }
+  }
+
+  String? get _emptyHint {
+    if (_canPost) return null;
+    switch (_type) {
+      case StoryType.textCard:
+        return 'Type something to post your status.';
+      case StoryType.imageText:
+        return 'Pick a photo to post.';
+      case StoryType.voiceNote:
+        return 'Record a voice note to post.';
     }
   }
 
@@ -135,9 +147,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
     await context.read<BeaconProvider>().postStory(
           type: _type,
           gradientIndex: _gradient,
-          caption: caption.isEmpty
-              ? (_type == StoryType.voiceNote ? '🎙️ voice note' : 'on the beacon ✨')
-              : caption,
+          caption: caption,
           imagePath: _imagePath,
           audioPath: _audioPath,
           audioDurationMs: _audioMs,
@@ -186,9 +196,9 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                 maxLength: 120,
                 style: const TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: _type == StoryType.voiceNote
-                      ? 'Add a caption (optional)'
-                      : 'Say something…',
+                  hintText: _type == StoryType.textCard
+                      ? 'Type your status…'
+                      : 'Add a caption (optional)',
                   hintStyle: const TextStyle(color: AppColors.textMuted),
                   filled: true,
                   fillColor: AppColors.surface,
@@ -203,6 +213,13 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                   ),
                 ),
               ),
+              if (_emptyHint != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(_emptyHint!,
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 12)),
+                ),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -276,48 +293,73 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
   }
 
   Widget _preview_(List<Color> colors) {
+    final hasImage = _type == StoryType.imageText && _imagePath != null;
     return Container(
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: _type == StoryType.imageText && _imagePath != null
+        gradient: hasImage
             ? null
             : LinearGradient(
                 colors: colors,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight),
-        image: _type == StoryType.imageText && _imagePath != null
+        image: hasImage
             ? DecorationImage(
                 image: FileImage(File(_imagePath!)), fit: BoxFit.cover)
             : null,
       ),
       child: Stack(
         children: [
+          // Text card: the caption IS the content, centred (WhatsApp text status).
+          if (_type == StoryType.textCard)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Text(
+                  _caption.text.isEmpty ? 'Type your status…' : _caption.text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: _caption.text.isEmpty
+                          ? Colors.white54
+                          : Colors.white,
+                      fontSize: 26,
+                      height: 1.25,
+                      fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          // Voice: a centred glyph over the gradient.
           if (_type == StoryType.voiceNote)
             Center(
               child: Icon(
                   _recording ? Icons.graphic_eq : Icons.multitrack_audio,
-                  size: 64,
+                  size: 72,
                   color: Colors.white70),
             ),
-          if (_caption.text.isNotEmpty)
+          // Image / voice: caption shown BENEATH the content as a bottom bar.
+          if (_type != StoryType.textCard && _caption.text.isNotEmpty)
             Align(
-              alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(8),
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.55)
+                    ],
                   ),
-                  child: Text(_caption.text,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700)),
                 ),
+                child: Text(_caption.text,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700)),
               ),
             ),
         ],

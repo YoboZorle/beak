@@ -14,36 +14,35 @@ class ChatListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final chat = context.watch<ChatProvider>();
     final pending = chat.incomingPending;
-    final chats = chat.chats;
+    final chats = chat.chats; // already sorted: most recent first
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
+      appBar: AppBar(
+        title: const Text('Chats'),
+        actions: [
+          if (chat.unreadTotal > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Text('${chat.unreadTotal} unread',
+                    style: const TextStyle(
+                        color: AppColors.accentSoft,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             if (pending.isNotEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.fromLTRB(4, 6, 4, 10),
-                child: Text('Beak requests',
-                    style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5)),
-              ),
+              _sectionLabel('Beak requests · ${pending.length}'),
               ...pending.map((r) => _RequestTile(request: r)),
               const SizedBox(height: 18),
             ],
-            const Padding(
-              padding: EdgeInsets.fromLTRB(4, 6, 4, 10),
-              child: Text('Conversations',
-                  style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5)),
-            ),
+            _sectionLabel('Conversations'),
             if (chats.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
@@ -55,12 +54,38 @@ class ChatListScreen extends StatelessWidget {
                 ),
               )
             else
-              ...chats.map((c) => _ChatTile(chat: c)),
+              ...chats.map((c) => _ChatTile(chat: c, unread: chat.unread(c))),
           ],
         ),
       ),
     );
   }
+
+  Widget _sectionLabel(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 10),
+        child: Text(text,
+            style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5)),
+      );
+}
+
+String _timeLabel(DateTime t) {
+  final now = DateTime.now();
+  final diff = now.difference(t);
+  if (diff.inSeconds < 60) return 'now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+  final sameDay =
+      now.year == t.year && now.month == t.month && now.day == t.day;
+  if (sameDay) {
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m ${t.hour < 12 ? 'AM' : 'PM'}';
+  }
+  if (diff.inDays < 7) return '${diff.inDays}d';
+  return '${t.day}/${t.month}';
 }
 
 class _RequestTile extends StatelessWidget {
@@ -75,7 +100,7 @@ class _RequestTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -118,12 +143,14 @@ class _RequestTile extends StatelessWidget {
 }
 
 class _ChatTile extends StatelessWidget {
-  const _ChatTile({required this.chat});
+  const _ChatTile({required this.chat, required this.unread});
   final Chat chat;
+  final int unread;
 
   @override
   Widget build(BuildContext context) {
     final last = chat.lastMessage;
+    final hasUnread = unread > 0;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => Navigator.of(context).push(
@@ -132,7 +159,7 @@ class _ChatTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         child: Row(
           children: [
-            AnimeAvatar(seed: chat.peerAvatarSeed, size: 50),
+            AnimeAvatar(seed: chat.peerAvatarSeed, size: 52, hasStory: false),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -147,10 +174,46 @@ class _ChatTile extends StatelessWidget {
                   Text(last?.text ?? 'Say hi 👋',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13)),
+                      style: TextStyle(
+                          color: hasUnread
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
+                          fontWeight:
+                              hasUnread ? FontWeight.w600 : FontWeight.w400,
+                          fontSize: 13)),
                 ],
               ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(_timeLabel(chat.updatedAt),
+                    style: TextStyle(
+                        color: hasUnread
+                            ? AppColors.accentSoft
+                            : AppColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                if (hasUnread)
+                  Container(
+                    constraints:
+                        const BoxConstraints(minWidth: 20, minHeight: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    decoration: const BoxDecoration(
+                        color: AppColors.accent, shape: BoxShape.circle),
+                    child: Text('$unread',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800)),
+                  )
+                else
+                  const SizedBox(height: 20),
+              ],
             ),
           ],
         ),

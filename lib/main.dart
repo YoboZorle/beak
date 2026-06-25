@@ -39,7 +39,7 @@ Future<void> main() async {
             create: (_) => SessionProvider(backend, location, notifications)),
         ChangeNotifierProvider(
             create: (_) => BeaconProvider(backend, location)),
-        ChangeNotifierProvider(create: (_) => ChatProvider(backend)),
+        ChangeNotifierProvider(create: (_) => ChatProvider(backend, storage.pin)),
       ],
       child: const BeauApp(),
     ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/chat.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../theme/app_colors.dart';
@@ -18,6 +17,14 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<ChatProvider>().markRead(widget.chatId);
+    });
+  }
 
   @override
   void dispose() {
@@ -42,11 +49,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chat = context.watch<ChatProvider>().chatById(widget.chatId);
+    final cp = context.watch<ChatProvider>();
+    final chat = cp.chatById(widget.chatId);
     final myId = context.watch<SessionProvider>().me?.id;
 
     if (chat == null) {
       return const Scaffold(body: Center(child: Text('Chat not found')));
+    }
+
+    // Mark new incoming messages read while this screen is open (self-terminating).
+    if (cp.unread(chat) > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) cp.markRead(widget.chatId);
+      });
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,9 +77,18 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             AnimeAvatar(seed: chat.peerAvatarSeed, size: 36),
             const SizedBox(width: 10),
-            Text(chat.peerUsername,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w700)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(chat.peerUsername,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700)),
+                const Text('anonymous beacon',
+                    style:
+                        TextStyle(fontSize: 11, color: AppColors.textMuted)),
+              ],
+            ),
           ],
         ),
       ),
@@ -84,7 +108,16 @@ class _ChatScreenState extends State<ChatScreen> {
                       itemBuilder: (_, i) {
                         final m = chat.messages[i];
                         final mine = m.senderId == myId;
-                        return _Bubble(text: m.text, mine: mine);
+                        final prev = i > 0 ? chat.messages[i - 1] : null;
+                        final showDay = prev == null ||
+                            !_sameDay(prev.sentAt, m.sentAt);
+                        return Column(
+                          children: [
+                            if (showDay) _DayChip(time: m.sentAt),
+                            _Bubble(
+                                text: m.text, mine: mine, time: m.sentAt),
+                          ],
+                        );
                       },
                     ),
             ),
@@ -94,6 +127,9 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   Widget _composer() {
     return Container(
@@ -140,10 +176,42 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
+String _clock(DateTime t) {
+  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  final m = t.minute.toString().padLeft(2, '0');
+  return '$h:$m ${t.hour < 12 ? 'AM' : 'PM'}';
+}
+
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.time});
+  final DateTime time;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = now.year == time.year &&
+        now.month == time.month &&
+        now.day == time.day;
+    final label = today ? 'Today' : '${time.day}/${time.month}/${time.year}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+            color: AppColors.surfaceHigh,
+            borderRadius: BorderRadius.circular(10)),
+        child: Text(label,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+      ),
+    );
+  }
+}
+
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.text, required this.mine});
+  const _Bubble({required this.text, required this.mine, required this.time});
   final String text;
   final bool mine;
+  final DateTime time;
 
   @override
   Widget build(BuildContext context) {
@@ -151,9 +219,9 @@ class _Bubble extends StatelessWidget {
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
         constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.72),
+            maxWidth: MediaQuery.of(context).size.width * 0.74),
         decoration: BoxDecoration(
           color: mine ? AppColors.accent : AppColors.surfaceHigh,
           borderRadius: BorderRadius.only(
@@ -163,10 +231,23 @@ class _Bubble extends StatelessWidget {
             bottomRight: Radius.circular(mine ? 4 : 16),
           ),
         ),
-        child: Text(text,
-            style: TextStyle(
-                color: mine ? Colors.white : AppColors.textPrimary,
-                fontSize: 15)),
+        child: Column(
+          crossAxisAlignment:
+              mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(text,
+                style: TextStyle(
+                    color: mine ? Colors.white : AppColors.textPrimary,
+                    fontSize: 15)),
+            const SizedBox(height: 3),
+            Text(_clock(time),
+                style: TextStyle(
+                    color: mine
+                        ? Colors.white.withValues(alpha: 0.75)
+                        : AppColors.textMuted,
+                    fontSize: 10)),
+          ],
+        ),
       ),
     );
   }
@@ -180,7 +261,7 @@ class _EncryptedBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 6),
-      color: AppColors.surfaceHigh.withOpacity(0.5),
+      color: AppColors.surfaceHigh.withValues(alpha: 0.5),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

@@ -69,9 +69,11 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
       await _player.pause();
       setState(() => _playing = false);
     } else {
-      final source = src.startsWith('http')
-          ? UrlSource(src)
-          : DeviceFileSource(src);
+      final Source source = src.startsWith('assets/')
+          ? AssetSource(src.substring('assets/'.length))
+          : src.startsWith('http')
+              ? UrlSource(src)
+              : DeviceFileSource(src);
       await _player.play(source);
       setState(() => _playing = true);
     }
@@ -202,9 +204,11 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   Widget _content(List<Color> colors) {
     final img = story.effectiveImage;
     if (story.type == StoryType.imageText && img != null) {
-      final provider = img.startsWith('http')
-          ? NetworkImage(img)
-          : FileImage(File(img)) as ImageProvider;
+      final ImageProvider provider = img.startsWith('assets/')
+          ? AssetImage(img)
+          : img.startsWith('http')
+              ? NetworkImage(img)
+              : FileImage(File(img)) as ImageProvider;
       return Container(
         decoration: BoxDecoration(
           image: DecorationImage(image: provider, fit: BoxFit.cover),
