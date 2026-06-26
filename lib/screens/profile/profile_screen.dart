@@ -298,37 +298,50 @@ class ProfileScreen extends StatelessWidget {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: AppColors.stroke,
-                      borderRadius: BorderRadius.circular(2)),
+      builder: (ctx) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: AppColors.stroke,
+                        borderRadius: BorderRadius.circular(2)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Levels',
-                  style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Text(
-                  'You\u2019re a ${current.name}. Post stories to climb the ranks.',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13)),
-              const SizedBox(height: 16),
-              for (var i = 0; i < Level.stageNames.length; i++)
-                _levelTile(i, current),
-            ],
+                const SizedBox(height: 16),
+                const Text('Levels',
+                    style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(
+                    'You\u2019re a ${current.name}. Post stories to climb the ranks.',
+                    style: const TextStyle(
+                        color: AppColors.textSecondary, fontSize: 13)),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0; i < Level.stageNames.length; i++)
+                          _levelTile(i, current),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

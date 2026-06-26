@@ -447,9 +447,10 @@ class MockBackendService implements BackendService {
     final username = UsernameGenerator.generateFrom(seed);
     final avatarSeed = UsernameGenerator.avatarSeedFrom(seed);
 
-    if (_chats.any((c) => c.peerId == pin)) {
+    final existingIdx = _chats.indexWhere((c) => c.peerId == pin);
+    if (existingIdx != -1) {
       return AddFriendResult(AddFriendStatus.alreadyConnected,
-          username: username);
+          username: username, chatId: _chats[existingIdx].id);
     }
 
     final req = ChatRequest(

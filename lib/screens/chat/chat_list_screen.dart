@@ -87,9 +87,9 @@ class ChatListScreen extends StatelessWidget {
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
-      builder: (_) => Padding(
+      builder: (sheetCtx) => Padding(
         padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
+            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
         child: _AddByPinSheet(myPin: myPin),
       ),
     );
@@ -313,19 +313,24 @@ class _AddByPinSheetState extends State<_AddByPinSheet> {
         break;
       case AddFriendStatus.alreadyConnected:
         navigator.pop();
-        messenger.showSnackBar(SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.surfaceHigh,
-          content: Text(
-              'You\u2019re already connected with ${result.username ?? value}.'),
-        ));
+        if (result.chatId != null) {
+          navigator.push(MaterialPageRoute(
+              builder: (_) => ChatScreen(chatId: result.chatId!)));
+        } else {
+          messenger.showSnackBar(SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.surfaceHigh,
+            content: Text(
+                'You\u2019re already connected with ${result.username ?? value}.'),
+          ));
+        }
         break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,

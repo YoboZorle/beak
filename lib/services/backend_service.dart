@@ -113,7 +113,10 @@ class AddFriendResult {
   /// The handle derived from the PIN (so the UI can confirm who you added).
   final String? username;
 
-  const AddFriendResult(this.status, {this.username});
+  /// When already connected, the existing chat to open directly.
+  final String? chatId;
+
+  const AddFriendResult(this.status, {this.username, this.chatId});
 }
 
 enum NearbyEventType { beaconNearby, storyPosted, chatRequest, messageReceived }
