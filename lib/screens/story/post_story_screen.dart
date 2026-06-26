@@ -10,6 +10,7 @@ import '../../models/story.dart';
 import '../../providers/beacon_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../services/audio_service.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/countdown.dart';
 
@@ -143,6 +144,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
     setState(() => _posting = true);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final notifications = context.read<NotificationService>();
     final caption = _caption.text.trim();
     await context.read<BeaconProvider>().postStory(
           type: _type,
@@ -153,6 +155,9 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
           audioDurationMs: _audioMs,
         );
     await context.read<SessionProvider>().refreshLevel();
+    // Schedule OS-level notifications that fire over the next few minutes —
+    // even if the app is closed — so activity reaches the device.
+    notifications.scheduleNearbyTeasers();
     if (!mounted) return;
     navigator.pop();
     messenger.showSnackBar(const SnackBar(

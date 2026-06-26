@@ -1,7 +1,8 @@
-/// Progress / level system (2GO-style).
+/// Progress / level system.
 ///
 /// Every story you post adds progress. When progress fills, you rank up.
-/// Stages: Rookie → Amateur → Intermediate → Veteran → Legend → Mythic.
+/// Ten ranks, from Rookie up to Mythic. Rookie clears at 3 posts; reaching
+/// Mythic takes 365 lifetime posts.
 class Level {
   /// 0-based stage index.
   final int stage;
@@ -14,14 +15,30 @@ class Level {
   static const List<String> stageNames = [
     'Rookie',
     'Amateur',
+    'Rising',
     'Intermediate',
+    'Skilled',
     'Veteran',
+    'Elite',
+    'Champion',
     'Legend',
     'Mythic',
   ];
 
-  /// Posts required to fully clear each stage.
-  static const List<int> postsPerStage = [3, 5, 8, 12, 20, 40];
+  /// Posts required to clear each stage (incremental). The last value is only a
+  /// display denominator for the max rank.
+  /// Cumulative to reach Mythic = 3+5+8+14+25+35+60+90+125 = 365.
+  static const List<int> postsPerStage = [3, 5, 8, 14, 25, 35, 60, 90, 125, 100];
+
+  /// Cumulative posts needed to REACH each stage (stage 0 starts at 0).
+  /// → [0, 3, 8, 16, 30, 55, 90, 150, 240, 365].
+  static List<int> get reachAt {
+    final out = <int>[0];
+    for (var i = 0; i < postsPerStage.length - 1; i++) {
+      out.add(out.last + postsPerStage[i]);
+    }
+    return out;
+  }
 
   String get name => stageNames[stage.clamp(0, stageNames.length - 1)];
 

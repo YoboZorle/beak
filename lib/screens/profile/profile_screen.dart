@@ -400,7 +400,10 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text('${Level.postsPerStage[i]} posts to clear this rank',
+                Text(
+                    i == 0
+                        ? 'Starting rank'
+                        : 'Reach at ${Level.reachAt[i]} posts',
                     style: const TextStyle(
                         color: AppColors.textMuted, fontSize: 12)),
                 if (isCurrent) ...[

@@ -51,6 +51,10 @@ dependencies:
 
   # Real local push notifications (nearby beacon / story / beak / message).
   flutter_local_notifications: ^17.2.3
+  # Scheduling so notifications fire at the OS level even when the app is
+  # backgrounded or closed.
+  timezone: ^0.9.4
+  flutter_timezone: ^1.0.8
 
   # Story media — 15s voice notes (flutter_sound: not federated, avoids the
   # broken record_linux sibling) + playback + image posts
