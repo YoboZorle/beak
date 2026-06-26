@@ -14,10 +14,10 @@ import '../profile/profile_screen.dart';
 
 /// WhatsApp-style full-screen story.
 ///
-/// Renders by type (text card / image+text / voice note), shows who posted
-/// (avatar, handle, level, distance, countdown — tap to open their profile),
-/// and lets you engage: tap a reaction, send a reply, or hit Beak. Any of
-/// those fires a Beak the author previews and accepts by responding.
+/// Layout is a Column: the media fills the flexible top area, and the
+/// engagement bar (reactions + reply + Beak) sits beneath it. With
+/// `resizeToAvoidBottomInset: true`, the keyboard simply pushes the engagement
+/// bar up and shrinks the media — no manual insets, no overflow.
 class StoryViewScreen extends StatefulWidget {
   const StoryViewScreen({
     super.key,
@@ -34,6 +34,7 @@ class StoryViewScreen extends StatefulWidget {
 
 class _StoryViewScreenState extends State<StoryViewScreen> {
   final _reply = TextEditingController();
+  final _replyFocus = FocusNode();
   final _player = AudioPlayer();
   bool _playing = false;
   Duration _pos = Duration.zero;
@@ -58,6 +59,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   @override
   void dispose() {
     _reply.dispose();
+    _replyFocus.dispose();
     _player.dispose();
     super.dispose();
   }
@@ -106,39 +108,57 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   Widget build(BuildContext context) {
     final colors = AppColors
         .avatarGradients[story.gradientIndex % AppColors.avatarGradients.length];
+    final showCaptionOverlay =
+        story.caption.isNotEmpty && story.type != StoryType.textCard;
 
     return Scaffold(
       backgroundColor: Colors.black,
       resizeToAvoidBottomInset: true,
-      body: Stack(
+      body: Column(
         children: [
-          Positioned.fill(child: _content(colors)),
-          // top scrim + header
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: const LinearProgressIndicator(
-                      value: 1,
-                      minHeight: 3,
-                      backgroundColor: Colors.white24,
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => _replyFocus.unfocus(),
+                    child: _content(colors),
+                  ),
+                ),
+                // top progress + header
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: const LinearProgressIndicator(
+                            value: 1,
+                            minHeight: 3,
+                            backgroundColor: Colors.white24,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _header(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _header(),
-                ],
-              ),
+                ),
+                // caption beneath the content (image / voice)
+                if (showCaptionOverlay)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _captionOverlay(),
+                  ),
+              ],
             ),
           ),
-          // bottom: caption + engagement
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _footer(),
-          ),
+          SafeArea(top: false, child: _engagement()),
         ],
       ),
     );
@@ -160,11 +180,16 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
               children: [
                 Row(
                   children: [
-                    Text(widget.viewerIsAuthor ? 'You' : story.authorUsername,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700)),
+                    Flexible(
+                      child: Text(
+                          widget.viewerIsAuthor ? 'You' : story.authorUsername,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700)),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -183,8 +208,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
                 Countdown(
                   remaining: story.remaining,
                   prefix: '⏳ ',
-                  style:
-                      const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
@@ -223,14 +247,53 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight),
       ),
-      child: story.type == StoryType.voiceNote ? _voicePlayer() : null,
+      child: story.type == StoryType.voiceNote
+          ? _voicePlayer()
+          : story.type == StoryType.textCard
+              ? _textCardBody()
+              : null,
     );
   }
 
+  Widget _textCardBody() => Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 90, 28, 90),
+          child: SingleChildScrollView(
+            child: Text(
+              story.caption,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  height: 1.3,
+                  fontWeight: FontWeight.w800),
+            ),
+          ),
+        ),
+      );
+
+  Widget _captionOverlay() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+          ),
+        ),
+        child: Text(story.caption,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700)),
+      );
+
   Widget _voicePlayer() {
-    final total = _dur.inMilliseconds == 0
-        ? story.audioDurationMs
-        : _dur.inMilliseconds;
+    final total =
+        _dur.inMilliseconds == 0 ? story.audioDurationMs : _dur.inMilliseconds;
     final value =
         total == 0 ? 0.0 : (_pos.inMilliseconds / total).clamp(0.0, 1.0);
     return Center(
@@ -272,41 +335,27 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
     );
   }
 
-  Widget _footer() {
+  Widget _engagement() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-          16, 28, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (story.caption.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Text(story.caption,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700)),
+      color: Colors.black,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: widget.viewerIsAuthor
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                  'This is your live story — others can react & Beak you.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _reactionRow(),
+                const SizedBox(height: 10),
+                _replyRow(),
+              ],
             ),
-          if (widget.viewerIsAuthor)
-            const Text('This is your live story — others can react & Beak you.',
-                style: TextStyle(color: Colors.white70, fontSize: 13))
-          else ...[
-            _reactionRow(),
-            const SizedBox(height: 12),
-            _replyRow(),
-          ],
-        ],
-      ),
     );
   }
 
@@ -314,7 +363,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -325,7 +374,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
               onTap: () => _beak(reaction: r),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(r.emoji, style: const TextStyle(fontSize: 28)),
+                child: Text(r.emoji, style: const TextStyle(fontSize: 26)),
               ),
             ),
         ],
@@ -339,8 +388,11 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
         Expanded(
           child: TextField(
             controller: _reply,
+            focusNode: _replyFocus,
             style: const TextStyle(color: Colors.white),
             textInputAction: TextInputAction.send,
+            minLines: 1,
+            maxLines: 4,
             onSubmitted: (v) {
               if (v.trim().isEmpty) return;
               _beak(message: v.trim());
@@ -367,7 +419,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
             Navigator.pop(context);
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
             decoration: BoxDecoration(
               color: AppColors.accent,
               borderRadius: BorderRadius.circular(26),

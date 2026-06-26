@@ -43,9 +43,9 @@ abstract class BackendService {
   /// Live, continuously-updating nearby stories (new posts, expiries).
   Stream<List<Story>> storyStream();
 
-  /// People near you ranked by level (highest first), including you. Ungated —
-  /// you can always see the local leaderboard. Each entry's distance is from
-  /// you; your own entry has distance 0.
+  /// People near you ranked by level (highest first), including you. **Gated**:
+  /// empty until you have a live post — you must post to see ranks and connect.
+  /// Each entry's distance is from you; your own entry has distance 0.
   Future<List<BeaconUser>> nearbyLeaderboard({double radiusKm = 30});
 
   // ---- Posting ---------------------------------------------------------
@@ -82,6 +82,10 @@ abstract class BackendService {
     String? aboutStoryCaption,
   });
 
+  /// BBM-style add-by-PIN. Send a friend request to a device by its Beau PIN;
+  /// the other device accepts and you become connected. Returns the outcome.
+  Future<AddFriendResult> addFriendByPin(String pin);
+
   /// Accept an incoming request -> creates a Chat (seeded with any preview).
   Future<Chat> acceptRequest(ChatRequest request);
 
@@ -98,6 +102,18 @@ abstract class BackendService {
   Stream<NearbyEvent> nearbyEventStream();
 
   void dispose();
+}
+
+/// Outcome of an add-by-PIN friend request.
+enum AddFriendStatus { sent, self, invalid, alreadyConnected }
+
+class AddFriendResult {
+  final AddFriendStatus status;
+
+  /// The handle derived from the PIN (so the UI can confirm who you added).
+  final String? username;
+
+  const AddFriendResult(this.status, {this.username});
 }
 
 enum NearbyEventType { beaconNearby, storyPosted, chatRequest, messageReceived }

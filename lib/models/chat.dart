@@ -29,6 +29,10 @@ class ChatRequest {
   final String? aboutStoryId;
   final String? aboutStoryCaption;
 
+  /// True when this request came from an explicit add-by-PIN (BBM-style),
+  /// rather than a proximity Beak.
+  final bool viaPin;
+
   const ChatRequest({
     required this.id,
     required this.fromUserId,
@@ -42,10 +46,12 @@ class ChatRequest {
     this.openingMessage,
     this.aboutStoryId,
     this.aboutStoryCaption,
+    this.viaPin = false,
   });
 
   /// One-line preview for the request tile / notification.
   String get preview {
+    if (viaPin) return 'wants to be beacon friends';
     if (reaction != null && (openingMessage?.isNotEmpty ?? false)) {
       return '${reaction!.emoji} “$openingMessage”';
     }
@@ -71,6 +77,7 @@ class ChatRequest {
         openingMessage: openingMessage,
         aboutStoryId: aboutStoryId,
         aboutStoryCaption: aboutStoryCaption,
+        viaPin: viaPin,
       );
 }
 

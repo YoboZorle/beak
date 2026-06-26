@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'username_generator.dart';
+
 /// Hardened persistence. **Everything** that survives restarts is stored in
 /// hardware-backed secure storage (iOS Keychain / Android Keystore via
 /// EncryptedSharedPreferences) — there is no plaintext on disk.
@@ -80,23 +82,42 @@ class StorageService {
     return pin;
   }
 
-  /// 8 uppercase hex chars (e.g. "2F9C4A7B"), from a CSPRNG.
+  /// Charset for Beau PINs: Crockford base32 — digits + letters, with the
+  /// ambiguous I, L, O, U removed so PINs are easy to read aloud and type.
+  static const _pinAlphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+  /// 8-char alphanumeric PIN, e.g. "K7Q2M9XB" — ~40 bits from a CSPRNG. Across
+  /// 32^8 (~1.1e12) possibilities collisions are practically impossible; Phase
+  /// 2 (Firebase) additionally enforces global uniqueness on write.
   String _generatePin() {
     final r = Random.secure();
-    final b = List<int>.generate(4, (_) => r.nextInt(256));
-    return b.map((x) => x.toRadixString(16).padLeft(2, '0')).join().toUpperCase();
+    while (true) {
+      final sb = StringBuffer();
+      for (var i = 0; i < 8; i++) {
+        sb.write(_pinAlphabet[r.nextInt(_pinAlphabet.length)]);
+      }
+      final pin = sb.toString();
+      // Guarantee it's alphanumeric in practice: at least one letter + digit.
+      if (pin.contains(RegExp('[0-9]')) && pin.contains(RegExp('[A-Z]'))) {
+        return pin;
+      }
+    }
+  }
+
+  /// Normalise user-entered PIN input: uppercase, strip spaces/dashes.
+  static String normalizePin(String raw) =>
+      raw.toUpperCase().replaceAll(RegExp('[^A-Z0-9]'), '');
+
+  /// A plausible PIN is 6–12 alphanumerics (lenient so typos surface clearly).
+  static bool isValidPin(String raw) {
+    final p = normalizePin(raw);
+    return p.length >= 6 && p.length <= 12;
   }
 
   String get pin => _pin;
 
   /// Deterministic seed from the PIN (handle + avatar derive from this).
-  int get identitySeed {
-    var h = 0;
-    for (final c in _pin.codeUnits) {
-      h = (h * 31 + c) & 0x7FFFFFFF;
-    }
-    return h;
-  }
+  int get identitySeed => UsernameGenerator.seedFromPin(_pin);
 
   // ---- app state (all encrypted at rest) -------------------------------
 

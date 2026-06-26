@@ -272,6 +272,7 @@ class MockBackendService implements BackendService {
 
   @override
   Future<List<BeaconUser>> nearbyLeaderboard({double radiusKm = 30}) async {
+    if (!_live) return const []; // post first to see ranks
     final maxM = radiusKm * 1000;
     final people =
         _world.where((u) => u.distanceMeters <= maxM).toList();
@@ -430,6 +431,82 @@ class MockBackendService implements BackendService {
       _scheduleReply(chat.id, target);
     });
     return req;
+  }
+
+  @override
+  Future<AddFriendResult> addFriendByPin(String pinInput) async {
+    final pin = StorageService.normalizePin(pinInput);
+    if (!RegExp(r'^[0-9A-Z]{8}$').hasMatch(pin)) {
+      return const AddFriendResult(AddFriendStatus.invalid);
+    }
+    if (pin == _me.id) return const AddFriendResult(AddFriendStatus.self);
+
+    // Derive the friend's identity from their PIN — identical to how their own
+    // device derives it, so the handle + avatar match exactly.
+    final seed = UsernameGenerator.seedFromPin(pin);
+    final username = UsernameGenerator.generateFrom(seed);
+    final avatarSeed = UsernameGenerator.avatarSeedFrom(seed);
+
+    if (_chats.any((c) => c.peerId == pin)) {
+      return AddFriendResult(AddFriendStatus.alreadyConnected,
+          username: username);
+    }
+
+    final req = ChatRequest(
+      id: _uuid.v4(),
+      fromUserId: _me.id,
+      fromUsername: _me.username,
+      fromAvatarSeed: _me.avatarSeed,
+      toUserId: pin,
+      status: ChatRequestStatus.pending,
+      createdAt: DateTime.now(),
+      incoming: false,
+      viaPin: true,
+      openingMessage: 'added you by Beau PIN',
+    );
+    _requests.add(req);
+    _requestCtrl.add(List.unmodifiable(_requests));
+
+    final target = BeaconUser(
+      id: pin,
+      username: username,
+      avatarSeed: avatarSeed,
+      level: Level.fromPostCount(seed % 30),
+      distanceMeters: 0,
+      hasStory: false,
+      bearing: 0,
+    );
+
+    // Simulate the other device receiving + accepting the request. In Phase 2
+    // this is a real request routed to that PIN's device via Firebase.
+    Timer(Duration(seconds: 2 + _rng.nextInt(3)), () {
+      final i = _requests.indexWhere((r) => r.id == req.id);
+      if (i != -1) {
+        _requests[i] =
+            _requests[i].copyWith(status: ChatRequestStatus.accepted);
+        _requestCtrl.add(List.unmodifiable(_requests));
+      }
+      _ensureChat(
+        peerId: target.id,
+        peerUsername: target.username,
+        peerAvatarSeed: target.avatarSeed,
+        seed: Message(
+          id: _uuid.v4(),
+          senderId: target.id,
+          text: 'hey! added you back 🤝',
+          sentAt: DateTime.now(),
+        ),
+      );
+      _eventCtrl.add(NearbyEvent(
+        type: NearbyEventType.chatRequest,
+        title: '$username accepted',
+        body: 'You\u2019re now beacon friends — say hi!',
+        username: username,
+        avatarSeed: avatarSeed,
+      ));
+    });
+
+    return AddFriendResult(AddFriendStatus.sent, username: username);
   }
 
   @override

@@ -84,6 +84,10 @@ class ChatProvider extends ChangeNotifier {
 
   Future<Chat> accept(ChatRequest r) => _backend.acceptRequest(r);
   Future<void> decline(ChatRequest r) => _backend.declineRequest(r);
+
+  /// BBM-style add by Beau PIN.
+  Future<AddFriendResult> addByPin(String pin) => _backend.addFriendByPin(pin);
+
   Future<void> send(String chatId, String text) =>
       _backend.sendMessage(chatId: chatId, text: text);
 

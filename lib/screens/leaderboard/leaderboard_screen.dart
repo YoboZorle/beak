@@ -8,6 +8,7 @@ import '../../providers/session_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/anime_avatar.dart';
 import '../profile/profile_screen.dart';
+import '../story/post_story_screen.dart';
 
 /// Local leaderboard — people near you ranked by level (highest first), with
 /// your own position highlighted. Tap anyone to view them or Beak to chat.
@@ -17,6 +18,8 @@ class LeaderboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final beacon = context.watch<BeaconProvider>();
+    if (!beacon.hasActivePost) return _locked(context);
+
     final myId = context.watch<SessionProvider>().me?.id;
     final ranked = beacon.leaderboard;
     final myRank = ranked.indexWhere((u) => u.id == myId);
@@ -56,6 +59,59 @@ class LeaderboardScreen extends StatelessWidget {
                       _row(context, i, ranked[i], ranked[i].id == myId),
                   ],
                 ),
+        ),
+      ),
+    );
+  }
+
+  Widget _locked(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Leaderboard')),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.emoji_events_outlined,
+                    size: 56, color: AppColors.accentSoft),
+                const SizedBox(height: 16),
+                const Text('Post to see the ranks',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                const Text(
+                    'Make a post first to light up your beacon. Then you can see where you rank and connect with people near you.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        height: 1.45)),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const PostStoryScreen())),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Post your story',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

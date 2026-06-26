@@ -33,4 +33,15 @@ class UsernameGenerator {
 
   /// Deterministic avatar seed from [seed].
   static int avatarSeedFrom(int seed) => Random(seed ^ 0x5DEECE66).nextInt(1 << 20);
+
+  /// Deterministic numeric seed from a Beau PIN string. Identical on every
+  /// device, so adding a friend's PIN yields exactly the handle + avatar their
+  /// own device shows.
+  static int seedFromPin(String pin) {
+    var h = 0;
+    for (final c in pin.codeUnits) {
+      h = (h * 31 + c) & 0x7FFFFFFF;
+    }
+    return h;
+  }
 }
