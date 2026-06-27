@@ -9,14 +9,20 @@ import 'package:geolocator/geolocator.dart';
 /// still runs against a fallback coordinate, and [permissionGranted] /
 /// [hasFix] expose the real state so the UI can prompt.
 class LocationService {
-  // Fallback (Lagos) keeps the app fully functional without GPS.
-  static const double fallbackLat = 6.5244;
-  static const double fallbackLng = 3.3792;
+  // Anchor (Port Harcourt). Keeps the app fully functional without GPS, and is
+  // the demo location the beacon is centred on.
+  static const double fallbackLat = 4.862749;
+  static const double fallbackLng = 6.958916;
+
+  /// DEMO: pin "my" position to the fixed coordinate above so the beacon and
+  /// the people around it are deterministic (simulators report random GPS).
+  /// Flip to false to use real device GPS again.
+  static const bool useDemoPosition = true;
 
   double _lat = fallbackLat;
   double _lng = fallbackLng;
-  bool _hasFix = false;
-  bool _permissionGranted = false;
+  bool _hasFix = useDemoPosition;
+  bool _permissionGranted = useDemoPosition;
 
   double get lat => _lat;
   double get lng => _lng;
@@ -26,6 +32,10 @@ class LocationService {
   /// Ensures we have permission (requesting it if needed). Returns true if we
   /// may read location. Safe to call repeatedly.
   Future<bool> ensurePermission() async {
+    if (useDemoPosition) {
+      _permissionGranted = true;
+      return true;
+    }
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
         _permissionGranted = false;
@@ -47,6 +57,10 @@ class LocationService {
   /// One real fix used at startup / on shake. Tries last-known first (instant),
   /// then a fresh medium-accuracy fix (good enough for proximity ranking).
   Future<void> refresh() async {
+    if (useDemoPosition) {
+      _apply(fallbackLat, fallbackLng);
+      return;
+    }
     if (!await ensurePermission()) return; // keep fallback
     try {
       final last = await Geolocator.getLastKnownPosition();
@@ -69,6 +83,7 @@ class LocationService {
   /// emits when the user moves >25 m, so it costs almost nothing but keeps
   /// proximity current as the user walks around.
   Stream<Position> watch() {
+    if (useDemoPosition) return const Stream<Position>.empty();
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.medium,

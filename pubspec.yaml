@@ -68,6 +68,11 @@ dependencies:
   uuid: ^4.5.1
   intl: ^0.19.0
 
+  # Real dark map for the beacon (OpenStreetMap/CARTO dark tiles, no API key).
+  # Markers are Flutter widgets, so each beacon pin is a real avatar + ring.
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

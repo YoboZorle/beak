@@ -141,12 +141,18 @@ class MockBackendService implements BackendService {
     if (_world.isNotEmpty) return;
     _anchorLat = _myLat;
     _anchorLng = _myLng;
-    final count = 9 + _rng.nextInt(4); // 9-12 people
-    for (var i = 0; i < count; i++) {
-      // Bias toward being visible at common ranges: most within ~10km.
-      final u = _spawn(maxMeters: 10000);
+    // A cluster right around the beacon (visible at the 1 km view)…
+    for (var i = 0; i < 6; i++) {
+      final u = _spawn(maxMeters: 900);
       _world.add(u);
       _stories.add(_storyFor(u)); // everyone visible has a post
+    }
+    // …plus more spread out for the wider ranges.
+    final extra = 6 + _rng.nextInt(4);
+    for (var i = 0; i < extra; i++) {
+      final u = _spawn(maxMeters: 9000);
+      _world.add(u);
+      _stories.add(_storyFor(u));
     }
   }
 
@@ -649,7 +655,7 @@ class MockBackendService implements BackendService {
       if (!_live) return;
       if (_rng.nextDouble() < 0.7) {
         // New nearby post — placed within ~5km so it appears on the radar.
-        final u = _spawn(maxMeters: 5000);
+        final u = _spawn(maxMeters: 900);
         _world.add(u);
         final s = _storyFor(u, fresh: true);
         _stories.add(s);
@@ -663,7 +669,7 @@ class MockBackendService implements BackendService {
         ));
       } else {
         // Incoming Beak — often a reaction/message about MY live story.
-        final u = _spawn(maxMeters: 6000);
+        final u = _spawn(maxMeters: 1600);
         _world.add(u);
         _stories.add(_storyFor(u, fresh: true));
         final react = _rng.nextBool()

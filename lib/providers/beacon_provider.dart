@@ -59,6 +59,8 @@ class BeaconProvider extends ChangeNotifier {
   int get nearbyCount => _beacons.length;
   bool get locating => _location.permissionGranted && !_location.hasFix;
   bool get hasFix => _location.hasFix;
+  double get myLat => _location.lat;
+  double get myLng => _location.lng;
 
   Future<void> _refreshStatus() async {
     _hasActivePost = await _backend.hasActivePost();
