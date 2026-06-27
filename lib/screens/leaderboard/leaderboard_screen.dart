@@ -33,7 +33,7 @@ class LeaderboardScreen extends StatelessWidget {
           onRefresh: () => beacon.scan(),
           child: ranked.isEmpty
               ? ListView(
-                  children: const [
+                  children: [
                     SizedBox(height: 120),
                     Center(
                       child: Text('No one ranked nearby yet.',
@@ -46,7 +46,7 @@ class LeaderboardScreen extends StatelessWidget {
                   children: [
                     _myPositionCard(myRank, ranked.length),
                     const SizedBox(height: 14),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.fromLTRB(4, 4, 4, 10),
                       child: Text('Top beacons near you',
                           style: TextStyle(
@@ -77,14 +77,14 @@ class LeaderboardScreen extends StatelessWidget {
                 const Icon(Icons.emoji_events_outlined,
                     size: 56, color: AppColors.accentSoft),
                 const SizedBox(height: 16),
-                const Text('Post to see the ranks',
+                Text('Post to see the ranks',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                     'Make a post first to light up your beacon. Then you can see where you rank and connect with people near you.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -190,7 +190,7 @@ class LeaderboardScreen extends StatelessWidget {
                       child: Text(isMe ? '${u.username} (you)' : u.username,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 15,
                               fontWeight: FontWeight.w700)),
@@ -202,7 +202,7 @@ class LeaderboardScreen extends StatelessWidget {
                     isMe
                         ? u.level.name
                         : '${u.level.name} · ${u.distanceLabel}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
@@ -225,7 +225,7 @@ class LeaderboardScreen extends StatelessWidget {
             IconButton(
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ProfileScreen(user: u))),
-              icon: const Icon(Icons.chevron_right,
+              icon: Icon(Icons.chevron_right,
                   color: AppColors.textMuted),
             ),
         ],

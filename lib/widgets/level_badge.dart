@@ -22,7 +22,7 @@ class LevelProgress extends StatelessWidget {
                   fontWeight: FontWeight.w600)),
           const SizedBox(width: 6),
           Text('${level.progressPercent}%',
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppColors.textMuted, fontSize: 12)),
         ],
       );
@@ -35,7 +35,7 @@ class LevelProgress extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(level.name,
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700)),
@@ -61,7 +61,7 @@ class LevelProgress extends StatelessWidget {
           level.isMax
               ? 'Max rank reached'
               : 'Post a story to rank up → ${Level.stageNames[(level.stage + 1).clamp(0, Level.stageNames.length - 1)]}',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
       ],
     );

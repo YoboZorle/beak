@@ -60,7 +60,7 @@ class _CountdownState extends State<Countdown> {
     return Text(
       '${widget.prefix}${_fmt(_left)}',
       style: widget.style ??
-          const TextStyle(
+          TextStyle(
             color: AppColors.textSecondary,
             fontFeatures: [FontFeature.tabularFigures()],
             fontSize: 13,

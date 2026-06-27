@@ -200,22 +200,22 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                 controller: _caption,
                 onChanged: (_) => setState(() {}),
                 maxLength: 120,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: _type == StoryType.textCard
                       ? 'Type your status…'
                       : 'Add a caption (optional)',
-                  hintStyle: const TextStyle(color: AppColors.textMuted),
+                  hintStyle: TextStyle(color: AppColors.textMuted),
                   filled: true,
                   fillColor: AppColors.surface,
-                  counterStyle: const TextStyle(color: AppColors.textMuted),
+                  counterStyle: TextStyle(color: AppColors.textMuted),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.stroke),
+                    borderSide: BorderSide(color: AppColors.stroke),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.stroke),
+                    borderSide: BorderSide(color: AppColors.stroke),
                   ),
                 ),
               ),
@@ -223,7 +223,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(_emptyHint!,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textMuted, fontSize: 12)),
                 ),
               SizedBox(
@@ -465,7 +465,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                     : _audioPath != null
                         ? 'Recorded ${(_audioMs / 1000).toStringAsFixed(1)}s'
                         : 'Tap to record (max 15s)',
-                style: const TextStyle(color: AppColors.textPrimary)),
+                style: TextStyle(color: AppColors.textPrimary)),
             if (_audioPath != null && !_recording)
               TextButton.icon(
                 onPressed: _togglePlay,
@@ -491,13 +491,13 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
                 const Icon(Icons.hourglass_bottom,
                     size: 56, color: AppColors.accentSoft),
                 const SizedBox(height: 16),
-                const Text('You already have a live story',
+                Text('You already have a live story',
                     style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                     'You can post one story every 5 minutes (demo). It disappears when the timer ends.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textSecondary)),

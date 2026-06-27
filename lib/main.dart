@@ -5,6 +5,7 @@ import 'app.dart';
 import 'providers/beacon_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/session_provider.dart';
+import 'providers/theme_controller.dart';
 import 'services/backend_service.dart';
 import 'services/location_service.dart';
 import 'services/mock_backend_service.dart';
@@ -40,6 +41,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
             create: (_) => BeaconProvider(backend, location)),
         ChangeNotifierProvider(create: (_) => ChatProvider(backend, storage.pin)),
+        ChangeNotifierProvider(create: (_) => ThemeController(storage)),
       ],
       child: const BeauApp(),
     ),

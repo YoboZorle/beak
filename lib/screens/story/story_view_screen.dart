@@ -10,6 +10,7 @@ import '../../providers/chat_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/anime_avatar.dart';
 import '../../widgets/countdown.dart';
+import '../../widgets/voice_visualizer.dart';
 import '../profile/profile_screen.dart';
 
 /// WhatsApp-style full-screen story.
@@ -314,20 +315,20 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
                   color: Colors.white, size: 48),
             ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: 220,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: value,
-                minHeight: 4,
-                backgroundColor: Colors.white24,
-                valueColor: const AlwaysStoppedAnimation(Colors.white),
+          const SizedBox(height: 26),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: SizedBox(
+              height: 56,
+              child: VoiceVisualizer(
+                playing: _playing,
+                progress: value,
+                seed: story.id.hashCode,
+                color: Colors.white,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text('Voice note · ${story.audioDurationLabel}',
               style: const TextStyle(color: Colors.white70, fontSize: 13)),
         ],

@@ -69,14 +69,14 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             const SizedBox(height: 28),
-            const Text('Beau',
+            Text('Beau',
                 style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 40,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -1)),
             const SizedBox(height: 10),
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 48),
               child: Text(
                 'Shake your beacon. Meet anonymous anime fans near you. No phone number, no profile, no strings.',

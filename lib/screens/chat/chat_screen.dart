@@ -84,7 +84,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(chat.peerUsername,
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
-                const Text('anonymous beacon',
+                Text('anonymous beacon',
                     style:
                         TextStyle(fontSize: 11, color: AppColors.textMuted)),
               ],
@@ -98,7 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
             const _EncryptedBanner(),
             Expanded(
               child: chat.messages.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text('Say hi 👋',
                           style: TextStyle(color: AppColors.textMuted)))
                   : ListView.builder(
@@ -134,7 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _composer() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.stroke)),
       ),
@@ -143,12 +143,12 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: TextField(
               controller: _input,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.textPrimary),
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _send(),
               decoration: InputDecoration(
                 hintText: 'Message…',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
+                hintStyle: TextStyle(color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.surfaceHigh,
                 contentPadding:
@@ -201,7 +201,7 @@ class _DayChip extends StatelessWidget {
             color: AppColors.surfaceHigh,
             borderRadius: BorderRadius.circular(10)),
         child: Text(label,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
       ),
     );
   }
@@ -262,7 +262,7 @@ class _EncryptedBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 6),
       color: AppColors.surfaceHigh.withValues(alpha: 0.5),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.lock, size: 12, color: AppColors.textMuted),

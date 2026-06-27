@@ -252,7 +252,7 @@ class _BeaconScreenState extends State<BeaconScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.surface.withValues(alpha: 0.92),
-              border: const Border(top: BorderSide(color: AppColors.stroke)),
+              border: Border(top: BorderSide(color: AppColors.stroke)),
             ),
             child: ListView(
               controller: sc,
@@ -263,7 +263,7 @@ class _BeaconScreenState extends State<BeaconScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('$nearCount',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 40,
                             height: 1,
@@ -280,7 +280,7 @@ class _BeaconScreenState extends State<BeaconScreen> {
                   ],
                 ),
                 Text('Within $_rangeKm km · tap a pin to open it.',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 14),
                 _gradientButton(
@@ -292,14 +292,14 @@ class _BeaconScreenState extends State<BeaconScreen> {
                   active: beacon.canPost,
                 ),
                 const SizedBox(height: 18),
-                const Text('Nearby stories',
+                Text('Nearby stories',
                     style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 10),
                 if (stories.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(
                       child: Text(
@@ -359,7 +359,7 @@ class _BeaconScreenState extends State<BeaconScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(posted ? 'Your beacon ended' : 'Your beacon is dark',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.w800)),
@@ -369,7 +369,7 @@ class _BeaconScreenState extends State<BeaconScreen> {
                       ? 'Your last story expired. Post again to reappear on the map and reconnect with people near you.'
                       : 'Post a story to light up your beacon, drop onto the map, and reveal everyone around you. No post, no presence.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14,
                       height: 1.5),

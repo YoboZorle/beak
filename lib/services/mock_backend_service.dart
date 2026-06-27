@@ -173,14 +173,6 @@ class MockBackendService implements BackendService {
     );
   }
 
-  static const _imageAssets = [
-    'assets/samples/img1.png',
-    'assets/samples/img2.png',
-    'assets/samples/img3.png',
-    'assets/samples/img4.png',
-    'assets/samples/img5.png',
-    'assets/samples/img6.png',
-  ];
   static const _voiceAssets = [
     'assets/samples/voice1.wav',
     'assets/samples/voice2.wav',
@@ -213,6 +205,7 @@ class MockBackendService implements BackendService {
     final roll = _rng.nextDouble();
     StoryType type;
     String? imagePath;
+    String? imageUrl;
     String? audioPath;
     int audioMs = 0;
     String caption;
@@ -221,7 +214,9 @@ class MockBackendService implements BackendService {
       caption = _captions[_rng.nextInt(_captions.length)];
     } else if (roll < 0.78) {
       type = StoryType.imageText;
-      imagePath = _imageAssets[_rng.nextInt(_imageAssets.length)];
+      // Realistic, varied photos (places / people / scenes) from Lorem Picsum.
+      imageUrl =
+          'https://picsum.photos/seed/beau${_rng.nextInt(100000)}/640/1138';
       caption = _captions[_rng.nextInt(_captions.length)];
     } else {
       type = StoryType.voiceNote;
@@ -247,6 +242,7 @@ class MockBackendService implements BackendService {
       lat: pin[0],
       lng: pin[1],
       imagePath: imagePath,
+      imageUrl: imageUrl,
       audioPath: audioPath,
       audioDurationMs: audioMs,
     );

@@ -52,7 +52,7 @@ class ChatListScreen extends StatelessWidget {
             ],
             _sectionLabel('Conversations'),
             if (chats.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
                 child: Center(
                   child: Text(
@@ -72,7 +72,7 @@ class ChatListScreen extends StatelessWidget {
   Widget _sectionLabel(String text) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 6, 4, 10),
         child: Text(text,
-            style: const TextStyle(
+            style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -135,21 +135,21 @@ class _RequestTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(request.fromUsername,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w700)),
                 Text(request.preview,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
           ),
           IconButton(
             onPressed: () => context.read<ChatProvider>().decline(request),
-            icon: const Icon(Icons.close, color: AppColors.textMuted),
+            icon: Icon(Icons.close, color: AppColors.textMuted),
           ),
           IconButton(
             onPressed: () async {
@@ -190,7 +190,7 @@ class _ChatTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(chat.peerUsername,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w700)),
@@ -346,13 +346,13 @@ class _AddByPinSheetState extends State<_AddByPinSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text('Add a beacon friend',
+          Text('Add a beacon friend',
               style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 22,
                   fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          const Text(
+          Text(
               'Share your PIN with someone, or enter theirs to send a request. They accept, and you\u2019re connected — no numbers, no names.',
               style: TextStyle(
                   color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
@@ -371,7 +371,7 @@ class _AddByPinSheetState extends State<_AddByPinSheet> {
                 const Icon(Icons.vpn_key,
                     color: AppColors.accentSoft, size: 18),
                 const SizedBox(width: 10),
-                const Text('Your PIN:',
+                Text('Your PIN:',
                     style:
                         TextStyle(color: AppColors.textMuted, fontSize: 13)),
                 const SizedBox(width: 8),
@@ -386,14 +386,14 @@ class _AddByPinSheetState extends State<_AddByPinSheet> {
                   tooltip: 'Copy',
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: widget.myPin));
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       behavior: SnackBarBehavior.floating,
                       backgroundColor: AppColors.surfaceHigh,
                       duration: Duration(milliseconds: 900),
                       content: Text('PIN copied'),
                     ));
                   },
-                  icon: const Icon(Icons.copy,
+                  icon: Icon(Icons.copy,
                       size: 18, color: AppColors.textSecondary),
                 ),
               ],
@@ -411,26 +411,26 @@ class _AddByPinSheetState extends State<_AddByPinSheet> {
               LengthLimitingTextInputFormatter(8),
               _UpperCaseTextFormatter(),
             ],
-            style: const TextStyle(
+            style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 4),
             decoration: InputDecoration(
               hintText: 'E.g. K7Q2M9XB',
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                   color: AppColors.textMuted, letterSpacing: 2),
               errorText: _error,
-              prefixIcon: const Icon(Icons.tag, color: AppColors.textMuted),
+              prefixIcon: Icon(Icons.tag, color: AppColors.textMuted),
               filled: true,
               fillColor: AppColors.surfaceHigh,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.stroke),
+                borderSide: BorderSide(color: AppColors.stroke),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.stroke),
+                borderSide: BorderSide(color: AppColors.stroke),
               ),
             ),
           ),

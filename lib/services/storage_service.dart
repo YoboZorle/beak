@@ -23,6 +23,7 @@ class StorageService {
   static const _kPostCount = 'beau.postCount';
   static const _kLastPostIso = 'beau.lastPostIso';
   static const _kOnboarded = 'beau.onboarded';
+  static const _kTheme = 'beau.themeMode';
   static const _kMyStory = 'beau.myStory';
 
   final FlutterSecureStorage _secure = const FlutterSecureStorage(
@@ -42,6 +43,7 @@ class StorageService {
   int _postCount = 0;
   String? _lastPostIso;
   bool _onboarded = false;
+  String _themeMode = 'system';
   String? _myStoryJson;
 
   Future<void> init() async {
@@ -49,6 +51,7 @@ class StorageService {
     _postCount = int.tryParse(await _read(_kPostCount) ?? '') ?? 0;
     _lastPostIso = await _read(_kLastPostIso);
     _onboarded = (await _read(_kOnboarded)) == 'true';
+    _themeMode = await _read(_kTheme) ?? 'system';
     _myStoryJson = await _read(_kMyStory);
   }
 
@@ -123,6 +126,7 @@ class StorageService {
 
   int get postCount => _postCount;
   bool get onboarded => _onboarded;
+  String get themeMode => _themeMode;
 
   DateTime? get lastPostAt =>
       _lastPostIso == null ? null : DateTime.tryParse(_lastPostIso!);
@@ -139,6 +143,11 @@ class StorageService {
   Future<void> setOnboarded(bool v) async {
     _onboarded = v;
     await _write(_kOnboarded, v ? 'true' : 'false');
+  }
+
+  Future<void> setThemeMode(String mode) async {
+    _themeMode = mode;
+    await _write(_kTheme, mode);
   }
 
   Future<void> recordPost(Map<String, dynamic> storyJson) async {

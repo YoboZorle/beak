@@ -186,8 +186,9 @@ class MapViewState extends State<MapView>
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+              urlTemplate: AppColors.brightness == Brightness.dark
+                  ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                  : 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.beau.app',
               maxZoom: 19,
             ),
@@ -290,21 +291,21 @@ class _StackTooltip extends StatelessWidget {
                 const Icon(Icons.layers, size: 16, color: AppColors.accentSoft),
                 const SizedBox(width: 8),
                 Text('${stories.length} beacons here',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w700)),
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.stroke),
+          Divider(height: 1, color: AppColors.stroke),
           Flexible(
             child: ListView.separated(
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(vertical: 6),
               itemCount: stories.length,
               separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: AppColors.stroke),
+                  Divider(height: 1, color: AppColors.stroke),
               itemBuilder: (_, i) {
                 final s = stories[i];
                 return InkWell(
@@ -323,7 +324,7 @@ class _StackTooltip extends StatelessWidget {
                               Text(s.authorUsername,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: AppColors.textPrimary,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700)),
@@ -331,13 +332,13 @@ class _StackTooltip extends StatelessWidget {
                                   s.caption.isEmpty ? 'Tap to view' : s.caption,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: AppColors.textMuted,
                                       fontSize: 11)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right,
+                        Icon(Icons.chevron_right,
                             size: 18, color: AppColors.textMuted),
                       ],
                     ),

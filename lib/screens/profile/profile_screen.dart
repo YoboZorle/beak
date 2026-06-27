@@ -6,6 +6,7 @@ import '../../models/level.dart';
 import '../../providers/beacon_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/session_provider.dart';
+import '../../providers/theme_controller.dart';
 import '../../services/storage_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/anime_avatar.dart';
@@ -43,13 +44,13 @@ class ProfileScreen extends StatelessWidget {
               AnimeAvatar(seed: u.avatarSeed, size: 110, hasStory: u.hasStory),
               const SizedBox(height: 16),
               Text(u.username,
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 26,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 6),
               Text('${u.level.name} · ${u.distanceLabel}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textSecondary, fontSize: 14)),
               const SizedBox(height: 24),
               Container(
@@ -113,7 +114,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Center(
                     child: Text(me.username,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 26,
                             fontWeight: FontWeight.w800)),
@@ -135,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           LevelProgress(level: session.level),
                           const SizedBox(height: 12),
-                          const Divider(color: AppColors.stroke, height: 1),
+                          Divider(color: AppColors.stroke, height: 1),
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +160,9 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   _storyCard(context, beacon),
                   const SizedBox(height: 24),
-                  const Text('Lifetime',
+                  _appearance(context),
+                  const SizedBox(height: 24),
+                  Text('Lifetime',
                       style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 13,
@@ -178,6 +181,44 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget _appearance(BuildContext context) {
+    final mode = context.watch<ThemeController>().mode;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Appearance',
+            style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                  value: ThemeMode.system,
+                  label: Text('System'),
+                  icon: Icon(Icons.brightness_auto, size: 16)),
+              ButtonSegment(
+                  value: ThemeMode.light,
+                  label: Text('Light'),
+                  icon: Icon(Icons.light_mode, size: 16)),
+              ButtonSegment(
+                  value: ThemeMode.dark,
+                  label: Text('Dark'),
+                  icon: Icon(Icons.dark_mode, size: 16)),
+            ],
+            selected: {mode},
+            showSelectedIcon: false,
+            onSelectionChanged: (sel) =>
+                context.read<ThemeController>().setMode(sel.first),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _pinCard(String pin) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -192,7 +233,7 @@ class ProfileScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Your Beau PIN',
+                Text('Your Beau PIN',
                     style:
                         TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 const SizedBox(height: 2),
@@ -205,9 +246,9 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            const Icon(Icons.lock, size: 14, color: AppColors.textMuted),
+            Icon(Icons.lock, size: 14, color: AppColors.textMuted),
             const SizedBox(width: 4),
-            const Text('this device',
+            Text('this device',
                 style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
           ],
         ),
@@ -240,26 +281,26 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(live ? 'Story is live' : 'No live story',
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   if (!live)
-                    const Text('You can post one story every 5 min (demo).',
+                    Text('You can post one story every 5 min (demo).',
                         style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 12))
                   else if (beacon.myStoryRemaining != null)
                     Countdown(
                       remaining: beacon.myStoryRemaining!,
                       prefix: 'Tap to view · disappears in ',
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 12),
                     ),
                 ],
               ),
             ),
             if (live && myStory != null)
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -278,12 +319,12 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(value,
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w800)),
               Text(label,
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textMuted, fontSize: 12)),
             ],
           ),
@@ -318,7 +359,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Levels',
+                Text('Levels',
                     style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 22,
@@ -326,7 +367,7 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                     'You\u2019re a ${current.name}. Post stories to climb the ranks.',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 16),
                 Flexible(
@@ -417,7 +458,7 @@ class ProfileScreen extends StatelessWidget {
                     i == 0
                         ? 'Starting rank'
                         : 'Reach at ${Level.reachAt[i]} posts',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textMuted, fontSize: 12)),
                 if (isCurrent) ...[
                   const SizedBox(height: 8),

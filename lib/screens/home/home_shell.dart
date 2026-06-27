@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/session_provider.dart';
+import '../../providers/theme_controller.dart';
 import '../../providers/chat_provider.dart';
 import '../../services/backend_service.dart';
 import '../../theme/app_colors.dart';
@@ -21,15 +22,9 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  final _pages = const [
-    BeaconScreen(),
-    ChatListScreen(),
-    LeaderboardScreen(),
-    ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeController>(); // rebuild the shell on theme change
     // Surface "push" events as a top banner (simulates FCM in-app display).
     final event = context.watch<SessionProvider>().lastEvent;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,9 +37,17 @@ class _HomeShellState extends State<HomeShell> {
     final inbox = context.watch<ChatProvider>().inboxBadge;
 
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(
+        index: _index,
+        children: [
+          BeaconScreen(),
+          ChatListScreen(),
+          LeaderboardScreen(),
+          ProfileScreen(),
+        ],
+      ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.stroke)),
         ),
@@ -53,7 +56,7 @@ class _HomeShellState extends State<HomeShell> {
             backgroundColor: Colors.transparent,
             indicatorColor: AppColors.accent.withOpacity(0.18),
             labelTextStyle: WidgetStateProperty.all(
-              const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ),
           child: NavigationBar(
@@ -61,7 +64,7 @@ class _HomeShellState extends State<HomeShell> {
             height: 64,
             onDestinationSelected: (i) => setState(() => _index = i),
             destinations: [
-              const NavigationDestination(
+              NavigationDestination(
                   icon: Icon(Icons.radar_outlined, color: AppColors.textSecondary),
                   selectedIcon: Icon(Icons.radar, color: AppColors.accent),
                   label: 'Beacon'),
@@ -69,19 +72,19 @@ class _HomeShellState extends State<HomeShell> {
                   icon: Badge(
                     isLabelVisible: inbox > 0,
                     label: Text('$inbox'),
-                    child: const Icon(Icons.chat_bubble_outline,
+                    child: Icon(Icons.chat_bubble_outline,
                         color: AppColors.textSecondary),
                   ),
                   selectedIcon:
                       const Icon(Icons.chat_bubble, color: AppColors.accent),
                   label: 'Chats'),
-              const NavigationDestination(
+              NavigationDestination(
                   icon: Icon(Icons.emoji_events_outlined,
                       color: AppColors.textSecondary),
                   selectedIcon:
                       Icon(Icons.emoji_events, color: AppColors.accent),
                   label: 'Ranks'),
-              const NavigationDestination(
+              NavigationDestination(
                   icon: Icon(Icons.person_outline, color: AppColors.textSecondary),
                   selectedIcon: Icon(Icons.person, color: AppColors.accent),
                   label: 'You'),
@@ -102,7 +105,7 @@ class _HomeShellState extends State<HomeShell> {
         duration: const Duration(seconds: 4),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: AppColors.stroke)),
+            side: BorderSide(color: AppColors.stroke)),
         content: Row(
           children: [
             AnimeAvatar(seed: e.avatarSeed, size: 38),
@@ -113,14 +116,14 @@ class _HomeShellState extends State<HomeShell> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(e.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
                           fontSize: 14)),
                   Text(e.body,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 12)),
                 ],
               ),

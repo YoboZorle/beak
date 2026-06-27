@@ -35,7 +35,7 @@ class OnboardingScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 8),
-              const Text('Welcome to Beau',
+              Text('Welcome to Beau',
                   style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 28,
@@ -57,7 +57,7 @@ class OnboardingScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Your Beau PIN · this device',
+                            Text('Your Beau PIN · this device',
                                 style: TextStyle(
                                     color: AppColors.textMuted, fontSize: 12)),
                             const SizedBox(height: 2),
@@ -68,7 +68,7 @@ class OnboardingScreen extends StatelessWidget {
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 2)),
                             Text(me.username,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: AppColors.textSecondary,
                                     fontSize: 13)),
                           ],
@@ -94,13 +94,13 @@ class OnboardingScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(p.$2,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: AppColors.textPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600)),
                               const SizedBox(height: 4),
                               Text(p.$3,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 13,
                                       height: 1.4)),
