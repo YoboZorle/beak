@@ -158,6 +158,7 @@ class _PostStoryScreenState extends State<PostStoryScreen> {
     // Schedule OS-level notifications that fire over the next few minutes —
     // even if the app is closed — so activity reaches the device.
     notifications.scheduleNearbyTeasers();
+    notifications.scheduleStoryEnded(Story.lifetime);
     if (!mounted) return;
     navigator.pop();
     messenger.showSnackBar(const SnackBar(

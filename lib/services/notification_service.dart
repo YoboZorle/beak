@@ -138,8 +138,27 @@ class NotificationService {
     }
   }
 
+  /// Schedule the "your beacon ended" notification to fire when this post
+  /// expires (fires on the device even if the app is closed).
+  Future<void> scheduleStoryEnded(Duration lifetime) async {
+    if (!_ready) return;
+    final when = tz.TZDateTime.now(tz.local).add(lifetime);
+    try {
+      await _plugin.zonedSchedule(
+        _teaserBase + 9,
+        '🔕 Your beacon ended',
+        'Your story expired. Post again to reappear on the map.',
+        when,
+        _details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (_) {}
+  }
+
   Future<void> cancelNearbyTeasers() async {
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 12; i++) {
       await _plugin.cancel(_teaserBase + i);
     }
   }
